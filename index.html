@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <title>Battleship - Shaka C</title>
@@ -72,53 +72,6 @@
 		<div class="cell" id="6-6"></div>
 	</div>
 <script>
-const data = {
-
-	'ships': 
-
-	[
-
-		{
-
-		'name': 'ship1',
-
-		'orientation': 'vertical',
-
-		'size': 4,
-
-		'coords':[2,3]
-
-		},	
-
-		{
-
-		'name':'ship2',
-
-		'orientation': 'horizontal',
-
-		'size': 3,
-
-		'coords':[3,3]
-
-		},
-
-		{
-
-		'name':'ship3',
-
-		'orientation': 'vertical',
-
-		'size': 2,
-
-		'coords':[6,5]
-
-		}
-
-
-
-	]
-
-}
 
 const vPlacement = (coord, size) => {
 	console.log("vert", coord, size)
@@ -128,8 +81,15 @@ const hPlacement = (coord, size) => {
 	console.log("horiz", coord, size)
 }
 
+const getShipData = () => 
+	fetch("./ships.json")
+	.then(response => response.json())
+	.then(data => data)
+	.catch(error => console.erorr('error fetching data', error))
 
-window.onload = () => {
+
+window.onload = async () => {
+	const data = getShipData()
 	const battleShips = data.ships
 	// 3 ships sized 2, 3, 4 squares
 	var squares = document.getElementsByClassName('cell')
