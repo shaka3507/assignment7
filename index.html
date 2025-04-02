@@ -88,50 +88,19 @@
 	</div>
 <script>
 
-const battleShips = {
-
-	"ships": 
-
-	[
-
-		{
-
-			"name": "ship1",
-
-			"orientation": "vertical",
-
-			"size": 4,
-
-			"coords":[2,3],
-
-		},	
-
-		{
-
-			"name":"ship2",
-
-			"orientation": "horizontal",
-
-			"size": 3,
-
-			"coords":[3,3]
-
-		},
-
-		{
-
-			"name":"ship3",
-
-			"orientation": "vertical",
-
-			"size": 2,
-
-			"coords":[6,5],
-
-		},
-
-	]
-
+const getData = async () => {
+  // fetches data from github api
+  const SHIP_API = "https://shaka3507.github.io/assignment7/index.json"
+  try {
+    const response = await fetch(SHIP_API)
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`)
+    }
+    const json = await response.json()
+    return json
+  } catch (error) {
+    console.error(error.message)
+  }
 }
 
 const getWinHitCount = (ships) => {
@@ -141,8 +110,9 @@ const getWinHitCount = (ships) => {
 }
 
 window.onload = async () => {
+	// extracts ship key from json data
+	const { ships } = await getData()
 	let guesses = 0
-	const { ships } = battleShips
 	let hitsToWin = getWinHitCount(ships)
 	let userHits = 0
 	const hitReportDisplay = document.getElementById('hit-report')
@@ -170,6 +140,7 @@ window.onload = async () => {
 	squares.forEach(sq => {
 		const { id } = sq
 		sq.onclick = () => { 
+			if(guesses === 20) return
 			// cant choose a square again -- doesnt ding you if you do
 			if(sq.classList.contains('hit') || sq.classList.contains('miss')) {
 				alert("choose new one")
