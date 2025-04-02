@@ -1,7 +1,7 @@
 ## Battleship
 
 ## Live URL
-[shc3507.github.io/assignment7/index.html](assignment seven)
+https://shaka3507.github.io/assignment7/index.html
 
 ## Questions
 
