@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
 <title>Battleship - Shaka C</title>
@@ -22,10 +22,10 @@
 		width: 660px;
 		flex-wrap: wrap;
 	}
-	.ship {
-		background-color: green;
+	.miss {
+		background-color: grey;
 	}
-	.revealed-miss {
+	.hit {
 		background-color: red;
 	}
 </style>
@@ -33,94 +33,187 @@
 
 <body>
 	<h1>Battleship</h1>
+	<h2 id="hit-report">START</h2>
+	<h3 id="guesses">20 guesses left</h3>
 	<div class="board">
+
+		<!-- first row -->
 		<div class="cell" id="1-1"></div>
-		<div class="cell" id="1-2"></div>
-		<div class="cell" id="1-3"></div>
-		<div class="cell" id="1-4"></div>
-		<div class="cell" id="1-5"></div>
-		<div class="cell" id="1-6"></div>
 		<div class="cell" id="2-1"></div>
-		<div class="cell" id="2-2"></div>
-		<div class="cell" id="2-3"></div>
-		<div class="cell" id="2-4"></div>
-		<div class="cell" id="2-5"></div>
-		<div class="cell" id="2-6"></div>
 		<div class="cell" id="3-1"></div>
-		<div class="cell" id="3-2"></div>
-		<div class="cell" id="3-3"></div>
-		<div class="cell" id="3-4"></div>
-		<div class="cell" id="3-5"></div>
-		<div class="cell" id="3-6"></div>
 		<div class="cell" id="4-1"></div>
-		<div class="cell" id="4-2"></div>
-		<div class="cell" id="4-3"></div>
-		<div class="cell" id="4-4"></div>
-		<div class="cell" id="4-5"></div>
-		<div class="cell" id="4-6"></div>
 		<div class="cell" id="5-1"></div>
-		<div class="cell" id="5-2"></div>
-		<div class="cell" id="5-3"></div>
-		<div class="cell" id="5-4"></div>
-		<div class="cell" id="5-5"></div>
-		<div class="cell" id="5-6"></div>
 		<div class="cell" id="6-1"></div>
+
+
+		<!-- second row -->
+		<div class="cell" id="1-2"></div>
+		<div class="cell" id="2-2"></div>
+		<div class="cell" id="3-2"></div>
+		<div class="cell" id="4-2"></div>
+		<div class="cell" id="5-2"></div>
 		<div class="cell" id="6-2"></div>
+
+		<!-- third row -->
+		<div class="cell" id="1-3"></div>
+		<div class="cell" id="2-3"></div>
+		<div class="cell" id="3-3"></div>
+		<div class="cell" id="4-3"></div>
+		<div class="cell" id="5-3"></div>
 		<div class="cell" id="6-3"></div>
+
+		<!-- fourth row -->
+		<div class="cell" id="1-4"></div>
+		<div class="cell" id="2-4"></div>
+		<div class="cell" id="3-4"></div>
+		<div class="cell" id="4-4"></div>
+		<div class="cell" id="5-4"></div>
 		<div class="cell" id="6-4"></div>
+
+		<!-- fith row -->
+		<div class="cell" id="1-5"></div>
+		<div class="cell" id="2-5"></div>
+		<div class="cell" id="3-5"></div>
+		<div class="cell" id="4-5"></div>
+		<div class="cell" id="5-5"></div>
 		<div class="cell" id="6-5"></div>
+
+		<!-- sixth row -->
+		<div class="cell" id="1-6"></div>
+		<div class="cell" id="2-6"></div>
+		<div class="cell" id="3-6"></div>
+		<div class="cell" id="4-6"></div>
+		<div class="cell" id="5-6"></div>
 		<div class="cell" id="6-6"></div>
 	</div>
 <script>
 
-const vPlacement = (coord, size) => {
-	console.log("vert", coord, size)
+const battleShips = {
+
+	"ships": 
+
+	[
+
+		{
+
+			"name": "ship1",
+
+			"orientation": "vertical",
+
+			"size": 4,
+
+			"coords":[2,3],
+
+		},	
+
+		{
+
+			"name":"ship2",
+
+			"orientation": "horizontal",
+
+			"size": 3,
+
+			"coords":[3,3]
+
+		},
+
+		{
+
+			"name":"ship3",
+
+			"orientation": "vertical",
+
+			"size": 2,
+
+			"coords":[6,5],
+
+		},
+
+	]
+
 }
 
-const hPlacement = (coord, size) => {
-	console.log("horiz", coord, size)
+const getWinHitCount = (ships) => {
+	let count = 0
+	ships.forEach(ship => count += ship.size)
+	return count
 }
-
-const getShipData = () => 
-	fetch("./ships.json")
-	.then(response => response.json())
-	.then(data => data)
-	.catch(error => console.erorr('error fetching data', error))
-
 
 window.onload = async () => {
-	const data = getShipData()
-	const battleShips = data.ships
-	// 3 ships sized 2, 3, 4 squares
-	var squares = document.getElementsByClassName('cell')
-	Array.from(squares).forEach(sq => {
-		const id = sq.id
-		data.ships.forEach(ship => {
-			const { coords, size, orientation } = ship
-			let formatShipCoords = `${ship.coords[0]}-${ship.coords[1]}`
-			console.log("sq id", sq.id, formatShipCoords)
-			if (sq.id === formatShipCoords) {
-				if(ship.orientation === 'vertical') {
-					sq.setAttribute('data-ship', 1)
-					sq.classList.add('ship')
-					vPlacement(coords, size)
-				} else if (orientation === 'horizontal') {
-					sq.setAttribute('data-ship', 1)
-					sq.classList.add('ship')
-					hPlacement(coords, size)
-				}
-			} else {
-				console.log('miss??')
-				sq.classList.add('miss')
+	let guesses = 0
+	const { ships } = battleShips
+	let hitsToWin = getWinHitCount(ships)
+	let userHits = 0
+	const hitReportDisplay = document.getElementById('hit-report')
+	const guessesDisplay = document.getElementById('guesses')
+	let squares = Array.from(document.getElementsByClassName('cell'))
+	let sunkTracker = {}
+
+	const getOtherCoords = (ship) => {
+		const { coords, orientation, size } = ship
+		let formattedInitialCoord = `${coords[0]}-${coords[1]}`
+		let result = [formattedInitialCoord]
+		count = size
+		incrementor = 0 // to help determine distance from original coordinate
+		while (count - 1) {
+			incrementor++ // increase incrementor to start with next coord below or to right
+			let horizCoord = `${coords[0] + incrementor}-${coords[1]}` // horiz coord should move to next column
+			let verticalCoord = `${coords[0]}-${coords[1] + incrementor}` // vert coord should move to row below
+			let coordResult = orientation === 'horizontal' ? horizCoord : verticalCoord
+			result.push(coordResult)
+			count--
+		}
+		return result
+	}
+
+	squares.forEach(sq => {
+		const { id } = sq
+		sq.onclick = () => { 
+			// cant choose a square again -- doesnt ding you if you do
+			if(sq.classList.contains('hit') || sq.classList.contains('miss')) {
+				alert("choose new one")
+				return 
 			}
-		})
+			foundShip = false // FLAG FOR displaying hit or miss to user
+			sunkShip = false
+			guesses++
+			// on click check for each ship
+			ships.forEach(ship => {
+				const { coords, size, orientation, name } = ship
+				const allCoords = getOtherCoords(ship)
+				if (allCoords.includes(id)) {
+					foundShip = true
+					sq.classList.add('hit')
+					userHits++
+					let sunkTrackerCount = sunkTracker[name] ? sunkTracker[name] + 1 : 1
+					sunkTracker = {...sunkTracker, [name]: sunkTrackerCount }
+					if(ship.size === sunkTrackerCount) {
+						sunkShip = true
+					}
+					sq.setAttribute(`data-${name}-coord`, allCoords.indexOf(id))
+				} else {
+					sq.classList.add('miss')
+				}
 
-	})
+			})
 
-	var missedSqs = document.getElementsByClassName('miss')
+			// UPDATE DISPLAY
+			if(foundShip && !sunkShip) {
+				hitReportDisplay.innerText = 'HIT'
+			} else if (foundShip && sunkShip) {
+				hitReportDisplay.innerText = 'SUNK'
+			} else {
+				hitReportDisplay.innerText = 'MISS'
+			}
+			guessesDisplay.innerText = (20 - guesses) + ' guesses left'
+			if(guesses === 20 & userHits < hitsToWin) {
+				guessesDisplay.innerText = 'GAME OVER'
+			} else if (userHits === hitsToWin) {
+				guessesDisplay.innerText = 'WON'
+			}
+		}
 
-	Array.from(missedSqs).forEach(missedSq => {
-		missedSq.onclick = () => missedSq.classList.add('revealed-miss')
 	})
 }
 </script>
