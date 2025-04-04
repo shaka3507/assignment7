@@ -66,32 +66,23 @@ window.onload = async () => {
         sunkTracker: {},
         userHits: 0,
         guesses: 0,
-        status: 'game'
     }
 
-    // if you hit each ship (using size determine amt of squares)
-    // that means you won
-	const getWinHitCount = () => {
-	    let count = 0
-	    ships.forEach(ship => count += ship.size)
-	    return count
-	}
-
-	const hitsToWin = getWinHitCount()
-
-
-	    // takes ships
-    // adds name of ship to inner text and adds bg color based on index
+    // if you hit each ship (using size determine amt of squares) which means you won
+    // uses reduce, where initial value is 0, accumulator is the added amt, and ship.size is the 'count'
+	const hitsToWin = ships.reduce((accumulator, ship) => accumulator + ship.size, 0)
+	
+    // Adds name of ship to inner text and adds bg color based on index (which match with ship name)
     const showShips = () => {
         const colors = ["orange", "teal", "yellow"]
+        // for each ship, get the coordinates, and display ship
         ships.forEach((ship, index) => {
-            const {
-                name
-            } = ship
+            const { name } = ship
             const coords = getAllShipCoords(ship)
             coords.forEach(el => {
                 let sq = document.getElementById(el)
-                sq.innerText += `Ship ${index + 1}` // makes it more 
+                let shipNum = name[name.length - 1] // this is the same as index but makes it more flexible if the data name was different
+                sq.innerText += `Ship ${name[name.length - 1]}` // makes it more 
                 sq.style.backgroundColor = colors[index]
 
             })
@@ -99,12 +90,9 @@ window.onload = async () => {
     }
 
 
+    // For figuring out all the coordinates for the ship, based on orientation and size
     const getAllShipCoords = (ship) => {
-        const {
-            coords,
-            orientation,
-            size
-        } = ship
+        const { coords, orientation, size } = ship
         let formattedInitialCoord = `${coords[0]}-${coords[1]}`
         let result = [formattedInitialCoord]
         count = size
@@ -120,6 +108,7 @@ window.onload = async () => {
         return result
     }
 
+    // Generates game board with data for helping figure out if ship has been hit
     const generateHtml = () => {
 		const boardDiv = document.getElementById('board')
 		for(let i = 1; i < 7; i++) {
@@ -137,7 +126,6 @@ window.onload = async () => {
 			})
 		})
 	}
-	// generate cells
 	generateHtml()
 
 	let squares = Array.from(document.getElementsByClassName('cell'))
@@ -146,8 +134,9 @@ window.onload = async () => {
             const { id } = sq // get id of square
             foundShip = false // FLAG FOR displaying hit or miss to user
             sunkShip = false // FLAG for displaying if ship was sunk to user
+
+            // GUARD RAILS ON GAME PLAY
             if (gameState.guesses === GUESS_LIMIT) return
-            // cant choose a square again -- doesnt ding you if you do
             if (sq.classList.contains('hit') || sq.classList.contains('miss')) {
                 alert("choose new one")
                 return
@@ -156,11 +145,15 @@ window.onload = async () => {
             // increment number of guesses
             gameState.guesses++
 
+
+            // DETERMINE HIT
+            // if cell doesnt have class ship, then it's a miss
             if(sq.classList.contains('ship')) {
             	sq.classList.add('hit')
             	foundShip = true
                 gameState.userHits++
                 const name = sq.getAttribute('ship-name')
+                // start tracking if ship was sunk by comparing ship name with size of ship, and counter
                 let sunkTrackerCount = gameState.sunkTracker[name] ? gameState.sunkTracker[name] + 1 : 1
                 gameState.sunkTracker = {
                     ...gameState.sunkTracker,
@@ -177,7 +170,7 @@ window.onload = async () => {
             	sq.classList.add('miss')
             }
 
-            // UPDATE DISPLAY
+            // UPDATE UI
             if (foundShip && !sunkShip) {
                 hitReportDisplay.innerText = 'HIT'
             } else if (foundShip && sunkShip) {
@@ -185,6 +178,7 @@ window.onload = async () => {
             } else {
                 hitReportDisplay.innerText = 'MISS'
             }
+            // decrement guesses in game ui
             guessesDisplay.innerText = (GUESS_LIMIT - gameState.guesses) + ' guesses left'
             if (gameState.guesses === GUESS_LIMIT & gameState.userHits < hitsToWin) {
                 guessesDisplay.innerText = 'GAME OVER'
