@@ -1,13 +1,14 @@
  <!DOCTYPE html>
 <html>
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Archivo:ital,wght@0,100..900;1,100..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 <title>Battleship - Shaka C</title>
 <style>
 	body {
 		text-align: center;
-	}
-	h1 {
-		font-family: Georgia;
+		font-family: "Archivo Black", sans-serif;
 	}
 	.cell {
 		width: 100px;
@@ -32,7 +33,7 @@
 </head>
 
 <body>
-	<h1>Battleship</h1>
+	<h1>BATTLESHIP</h1>
 	<h2 id="hit-report">START</h2>
 	<h3 id="guesses">20 guesses left</h3>
 	<div class="board">
@@ -87,105 +88,148 @@
 		<div class="cell" id="6-6"></div>
 	</div>
 <script>
-
 const getData = async () => {
-  // fetches data from github api
-  const SHIP_API = "https://shaka3507.github.io/assignment7/index.json"
-  try {
-    const response = await fetch(SHIP_API)
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`)
+    // fetches data from github api
+    const SHIP_API = "https://shaka3507.github.io/assignment7/index.json"
+    try {
+        const response = await fetch(SHIP_API)
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`)
+        }
+        const json = await response.json()
+        return json
+    } catch (error) {
+        console.error(error.message)
     }
-    const json = await response.json()
-    return json
-  } catch (error) {
-    console.error(error.message)
-  }
 }
-
-const getWinHitCount = (ships) => {
-	let count = 0
-	ships.forEach(ship => count += ship.size)
-	return count
-}
-
 window.onload = async () => {
-	// extracts ship key from json data
-	const { ships } = await getData()
-	let guesses = 0
-	let hitsToWin = getWinHitCount(ships)
-	let userHits = 0
-	const hitReportDisplay = document.getElementById('hit-report')
-	const guessesDisplay = document.getElementById('guesses')
-	let squares = Array.from(document.getElementsByClassName('cell'))
-	let sunkTracker = {}
+    // Extracts ship key from json data
+    const { ships } = await getData()
+    const hitReportDisplay = document.getElementById('hit-report')
+    const guessesDisplay = document.getElementById('guesses')
+    let squares = Array.from(document.getElementsByClassName('cell'))
+    const GUESS_LIMIT = 20
 
-	const getOtherCoords = (ship) => {
-		const { coords, orientation, size } = ship
-		let formattedInitialCoord = `${coords[0]}-${coords[1]}`
-		let result = [formattedInitialCoord]
-		count = size
-		incrementor = 0 // to help determine distance from original coordinate
-		while (count - 1) {
-			incrementor++ // increase incrementor to start with next coord below or to right
-			let horizCoord = `${coords[0] + incrementor}-${coords[1]}` // horiz coord should move to next column
-			let verticalCoord = `${coords[0]}-${coords[1] + incrementor}` // vert coord should move to row below
-			let coordResult = orientation === 'horizontal' ? horizCoord : verticalCoord
-			result.push(coordResult)
-			count--
-		}
-		return result
+    // Object to keep track of game state
+    let gameState = {
+        sunkTracker: {},
+        userHits: 0,
+        guesses: 0,
+        status: 'game'
+    }
+
+    // if you hit each ship (using size determine amt of squares)
+    // that means you won
+	const getWinHitCount = () => {
+	    let count = 0
+	    ships.forEach(ship => count += ship.size)
+	    return count
 	}
 
-	squares.forEach(sq => {
-		const { id } = sq
-		sq.onclick = () => { 
-			if(guesses === 20) return
-			// cant choose a square again -- doesnt ding you if you do
-			if(sq.classList.contains('hit') || sq.classList.contains('miss')) {
-				alert("choose new one")
-				return 
-			}
-			foundShip = false // FLAG FOR displaying hit or miss to user
-			sunkShip = false
-			guesses++
-			// on click check for each ship
-			ships.forEach(ship => {
-				const { coords, size, orientation, name } = ship
-				const allCoords = getOtherCoords(ship)
-				if (allCoords.includes(id)) {
-					foundShip = true
-					sq.classList.add('hit')
-					userHits++
-					let sunkTrackerCount = sunkTracker[name] ? sunkTracker[name] + 1 : 1
-					sunkTracker = {...sunkTracker, [name]: sunkTrackerCount }
-					if(ship.size === sunkTrackerCount) {
-						sunkShip = true
-					}
-					sq.setAttribute(`data-${name}-coord`, allCoords.indexOf(id))
-				} else {
-					sq.classList.add('miss')
-				}
+	const hitsToWin = getWinHitCount()
 
-			})
 
-			// UPDATE DISPLAY
-			if(foundShip && !sunkShip) {
-				hitReportDisplay.innerText = 'HIT'
-			} else if (foundShip && sunkShip) {
-				hitReportDisplay.innerText = 'SUNK'
-			} else {
-				hitReportDisplay.innerText = 'MISS'
-			}
-			guessesDisplay.innerText = (20 - guesses) + ' guesses left'
-			if(guesses === 20 & userHits < hitsToWin) {
-				guessesDisplay.innerText = 'GAME OVER'
-			} else if (userHits === hitsToWin) {
-				guessesDisplay.innerText = 'WON'
-			}
-		}
+    const getAllShipCoords = (ship) => {
+        const {
+            coords,
+            orientation,
+            size
+        } = ship
+        let formattedInitialCoord = `${coords[0]}-${coords[1]}`
+        let result = [formattedInitialCoord]
+        count = size
+        incrementor = 0 // to help determine distance from original coordinate
+        while (count - 1) {
+            incrementor++ // increase incrementor to start with next coord below or to right
+            let horizCoord = `${coords[0] + incrementor}-${coords[1]}` // horiz coord should move to next column
+            let verticalCoord = `${coords[0]}-${coords[1] + incrementor}` // vert coord should move to row below
+            let coordResult = orientation === 'horizontal' ? horizCoord : verticalCoord // determine which one to use by orientation
+            result.push(coordResult)
+            count--
+        }
+        return result
+    }
 
-	})
+    // takes ships
+    // adds name of ship to inner text and adds bg color based on index
+    const showShips = () => {
+        const colors = ["orange", "teal", "yellow"]
+        ships.forEach((ship, index) => {
+            const {
+                name
+            } = ship
+            const coords = getAllShipCoords(ship)
+            coords.forEach(el => {
+                let sq = document.getElementById(el)
+                sq.innerText += `Ship ${index + 1}` // makes it more 
+                sq.style.backgroundColor = colors[index]
+
+            })
+        })
+    }
+
+    squares.forEach(sq => sq.onclick = () => {
+            const { id } = sq // get id of square
+            foundShip = false // FLAG FOR displaying hit or miss to user
+            sunkShip = false // FLAG for displaying if ship was sunk to user
+            if (gameState.guesses === GUESS_LIMIT) return
+            // cant choose a square again -- doesnt ding you if you do
+            if (sq.classList.contains('hit') || sq.classList.contains('miss')) {
+                alert("choose new one")
+                return
+            }
+
+            // increment number of guesses
+            gameState.guesses++
+            // On click check for each ship
+            ships.forEach(ship => {
+                const {
+                    coords,
+                    size,
+                    orientation,
+                    name
+                } = ship
+                const allCoords = getAllShipCoords(ship)
+                if (allCoords.includes(id)) {
+                    foundShip = true
+                    sq.classList.add('hit')
+                    gameState.userHits++
+                    let sunkTrackerCount = gameState.sunkTracker[name] ? gameState.sunkTracker[name] + 1 : 1
+                    gameState.sunkTracker = {
+                        ...gameState.sunkTracker,
+                        [name]: sunkTrackerCount
+                    }
+                    // If ship square count (size) = to ships pieces found for ship, 
+                    // ship is sunk and show to user
+                    if (ship.size === sunkTrackerCount) {
+                        sunkShip = true
+                    }
+                    sq.setAttribute(`data-ship`, name)
+                } else {
+                    sq.classList.add('miss')
+                }
+
+            })
+
+            // UPDATE DISPLAY
+            if (foundShip && !sunkShip) {
+                hitReportDisplay.innerText = 'HIT'
+            } else if (foundShip && sunkShip) {
+                hitReportDisplay.innerText = 'SUNK'
+            } else {
+                hitReportDisplay.innerText = 'MISS'
+            }
+            guessesDisplay.innerText = (GUESS_LIMIT - gameState.guesses) + ' guesses left'
+            if (gameState.guesses === GUESS_LIMIT & gameState.userHits < hitsToWin) {
+                guessesDisplay.innerText = 'GAME OVER'
+                showShips()
+            } else if (gameState.userHits === hitsToWin) {
+                guessesDisplay.innerText = 'WON'
+                showShips()
+            }
+        }
+
+    )
 }
 </script>
 </body>
