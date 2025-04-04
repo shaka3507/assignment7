@@ -53,23 +53,12 @@ const getData = async () => {
     }
 }
 
-const generateHtml = () => {
-	const boardDiv = document.getElementById('board')
-	for(let i = 1; i < 7; i++) {
-		for (let j = 1; j < 7; j++) {
-			boardDiv.innerHTML += `<div id="${j}-${i}" class="cell">`
-		}
-	}
-}
 
 window.onload = async () => {
-	// generate cells
-	generateHtml()
     // Extracts ship key from json data
     const { ships } = await getData()
     const hitReportDisplay = document.getElementById('hit-report')
     const guessesDisplay = document.getElementById('guesses')
-    let squares = Array.from(document.getElementsByClassName('cell'))
     const GUESS_LIMIT = 20
 
     // Object to keep track of game state
@@ -89,6 +78,7 @@ window.onload = async () => {
 	}
 
 	const hitsToWin = getWinHitCount()
+
 
 	    // takes ships
     // adds name of ship to inner text and adds bg color based on index
@@ -130,6 +120,28 @@ window.onload = async () => {
         return result
     }
 
+    const generateHtml = () => {
+		const boardDiv = document.getElementById('board')
+		for(let i = 1; i < 7; i++) {
+			for (let j = 1; j < 7; j++) {
+				boardDiv.innerHTML += `<div id="${j}-${i}" class="cell">`
+			}
+		}
+		const shipsCoord = ships.forEach((ship, idx) => {
+			const coords = getAllShipCoords(ship)
+			const { name, size } = ship
+			coords.forEach(coord => {
+				document.getElementById(coord).classList.add('ship', `ship-${idx+1}`) // informational for debugging
+				document.getElementById(coord).setAttribute('ship-size', size) // for deciding if ship is sunk
+				document.getElementById(coord).setAttribute('ship-name', name) // for deciding if ship is sunk
+			})
+		})
+	}
+	// generate cells
+	generateHtml()
+
+	let squares = Array.from(document.getElementsByClassName('cell'))
+
     squares.forEach(sq => sq.onclick = () => {
             const { id } = sq // get id of square
             foundShip = false // FLAG FOR displaying hit or miss to user
@@ -143,35 +155,27 @@ window.onload = async () => {
 
             // increment number of guesses
             gameState.guesses++
-            // On click check for each ship
-            ships.forEach(ship => {
-                const {
-                    coords,
-                    size,
-                    orientation,
-                    name
-                } = ship
-                const allCoords = getAllShipCoords(ship)
-                if (allCoords.includes(id)) {
-                    foundShip = true
-                    sq.classList.add('hit')
-                    gameState.userHits++
-                    let sunkTrackerCount = gameState.sunkTracker[name] ? gameState.sunkTracker[name] + 1 : 1
-                    gameState.sunkTracker = {
-                        ...gameState.sunkTracker,
-                        [name]: sunkTrackerCount
-                    }
-                    // If ship square count (size) = to ships pieces found for ship, 
-                    // ship is sunk and show to user
-                    if (ship.size === sunkTrackerCount) {
-                        sunkShip = true
-                    }
-                    sq.setAttribute(`data-ship`, name)
-                } else {
-                    sq.classList.add('miss')
+
+            if(sq.classList.contains('ship')) {
+            	sq.classList.add('hit')
+            	foundShip = true
+                gameState.userHits++
+                const name = sq.getAttribute('ship-name')
+                let sunkTrackerCount = gameState.sunkTracker[name] ? gameState.sunkTracker[name] + 1 : 1
+                gameState.sunkTracker = {
+                    ...gameState.sunkTracker,
+                    [name]: sunkTrackerCount
+                }
+                // If ship square count (size) = to ships pieces found for ship, 
+                // ship is sunk and show to user
+                const shipSize = Number(sq.getAttribute('ship-size'))
+                if (shipSize == sunkTrackerCount) {
+                    sunkShip = true
                 }
 
-            })
+            } else {
+            	sq.classList.add('miss')
+            }
 
             // UPDATE DISPLAY
             if (foundShip && !sunkShip) {
