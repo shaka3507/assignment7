@@ -16,7 +16,7 @@
 		border: 1px solid black;
 		margin: 0;
 	}
-	.board {
+	#board {
 		margin: 20px auto;
 		justify-content: center;
 		display: flex;
@@ -36,57 +36,7 @@
 	<h1>BATTLESHIP</h1>
 	<h2 id="hit-report">START</h2>
 	<h3 id="guesses">20 guesses left</h3>
-	<div class="board">
-
-		<!-- first row -->
-		<div class="cell" id="1-1"></div>
-		<div class="cell" id="2-1"></div>
-		<div class="cell" id="3-1"></div>
-		<div class="cell" id="4-1"></div>
-		<div class="cell" id="5-1"></div>
-		<div class="cell" id="6-1"></div>
-
-
-		<!-- second row -->
-		<div class="cell" id="1-2"></div>
-		<div class="cell" id="2-2"></div>
-		<div class="cell" id="3-2"></div>
-		<div class="cell" id="4-2"></div>
-		<div class="cell" id="5-2"></div>
-		<div class="cell" id="6-2"></div>
-
-		<!-- third row -->
-		<div class="cell" id="1-3"></div>
-		<div class="cell" id="2-3"></div>
-		<div class="cell" id="3-3"></div>
-		<div class="cell" id="4-3"></div>
-		<div class="cell" id="5-3"></div>
-		<div class="cell" id="6-3"></div>
-
-		<!-- fourth row -->
-		<div class="cell" id="1-4"></div>
-		<div class="cell" id="2-4"></div>
-		<div class="cell" id="3-4"></div>
-		<div class="cell" id="4-4"></div>
-		<div class="cell" id="5-4"></div>
-		<div class="cell" id="6-4"></div>
-
-		<!-- fith row -->
-		<div class="cell" id="1-5"></div>
-		<div class="cell" id="2-5"></div>
-		<div class="cell" id="3-5"></div>
-		<div class="cell" id="4-5"></div>
-		<div class="cell" id="5-5"></div>
-		<div class="cell" id="6-5"></div>
-
-		<!-- sixth row -->
-		<div class="cell" id="1-6"></div>
-		<div class="cell" id="2-6"></div>
-		<div class="cell" id="3-6"></div>
-		<div class="cell" id="4-6"></div>
-		<div class="cell" id="5-6"></div>
-		<div class="cell" id="6-6"></div>
-	</div>
+	<div id="board" />
 <script>
 const getData = async () => {
     // fetches data from github api
@@ -102,7 +52,19 @@ const getData = async () => {
         console.error(error.message)
     }
 }
+
+const generateHtml = () => {
+	const boardDiv = document.getElementById('board')
+	for(let i = 1; i < 7; i++) {
+		for (let j = 1; j < 7; j++) {
+			boardDiv.innerHTML += `<div id="${j}-${i}" class="cell">`
+		}
+	}
+}
+
 window.onload = async () => {
+	// generate cells
+	generateHtml()
     // Extracts ship key from json data
     const { ships } = await getData()
     const hitReportDisplay = document.getElementById('hit-report')
@@ -128,6 +90,24 @@ window.onload = async () => {
 
 	const hitsToWin = getWinHitCount()
 
+	    // takes ships
+    // adds name of ship to inner text and adds bg color based on index
+    const showShips = () => {
+        const colors = ["orange", "teal", "yellow"]
+        ships.forEach((ship, index) => {
+            const {
+                name
+            } = ship
+            const coords = getAllShipCoords(ship)
+            coords.forEach(el => {
+                let sq = document.getElementById(el)
+                sq.innerText += `Ship ${index + 1}` // makes it more 
+                sq.style.backgroundColor = colors[index]
+
+            })
+        })
+    }
+
 
     const getAllShipCoords = (ship) => {
         const {
@@ -148,24 +128,6 @@ window.onload = async () => {
             count--
         }
         return result
-    }
-
-    // takes ships
-    // adds name of ship to inner text and adds bg color based on index
-    const showShips = () => {
-        const colors = ["orange", "teal", "yellow"]
-        ships.forEach((ship, index) => {
-            const {
-                name
-            } = ship
-            const coords = getAllShipCoords(ship)
-            coords.forEach(el => {
-                let sq = document.getElementById(el)
-                sq.innerText += `Ship ${index + 1}` // makes it more 
-                sq.style.backgroundColor = colors[index]
-
-            })
-        })
     }
 
     squares.forEach(sq => sq.onclick = () => {
