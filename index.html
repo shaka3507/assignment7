@@ -1,6 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Archivo:ital,wght@0,100..900;1,100..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
@@ -9,12 +10,17 @@
 	body {
 		text-align: center;
 		font-family: "Archivo Black", sans-serif;
+		background-color: #121212;
+		color: #f9f9f9;
 	}
 	.cell {
 		width: 100px;
 		height: 100px;
-		border: 1px solid black;
+		border: 1px solid white;
 		margin: 0;
+		line-height: 100px;
+		text-transform: uppercase;
+		font-size: 18px;
 	}
 	#board {
 		margin: 20px auto;
@@ -24,10 +30,24 @@
 		flex-wrap: wrap;
 	}
 	.miss {
-		background-color: grey;
+		background-color: lightgrey;
+		font-size: 24px;
 	}
 	.hit {
-		background-color: red;
+		background-color: #FF8488;
+	}
+	/*	responsive on phones*/
+	@media only screen and (max-width: 500px) {
+		.cell {
+			width: 60px;
+			height: 60px;
+			line-height: 60px;
+			font-size: 12px;
+			border-width: 0.5px;
+		}
+		#board {
+			width: 375px;
+		}
 	}
 </style>
 </head>
@@ -38,7 +58,7 @@
 	<h3 id="guesses">20 guesses left</h3>
 	<div id="board" />
 <script>
-const getData = async () => {
+const getShipData = async () => {
     // fetches data from github api
     const SHIP_API = "https://shaka3507.github.io/assignment7/index.json"
     try {
@@ -56,7 +76,7 @@ const getData = async () => {
 
 window.onload = async () => {
     // Extracts ship key from json data
-    const { ships } = await getData()
+    const { ships } = await getShipData()
     const hitReportDisplay = document.getElementById('hit-report')
     const guessesDisplay = document.getElementById('guesses')
     const GUESS_LIMIT = 20
@@ -73,8 +93,8 @@ window.onload = async () => {
 	const hitsToWin = ships.reduce((accumulator, ship) => accumulator + ship.size, 0)
 	
     // Adds name of ship to inner text and adds bg color based on index (which match with ship name)
-    const showShips = () => {
-        const colors = ["orange", "teal", "yellow"]
+    const endGame = (msg) => {
+        const colors = ["#301934", "#036c5f", "#00008B"] // dark purple/teal/darkblue
         // for each ship, get the coordinates, and display ship
         ships.forEach((ship, index) => {
             const { name } = ship
@@ -82,11 +102,14 @@ window.onload = async () => {
             coords.forEach(el => {
                 let sq = document.getElementById(el)
                 let shipNum = name[name.length - 1] // this is the same as index but makes it more flexible if the data name was different
-                sq.innerText += `Ship ${name[name.length - 1]}` // makes it more 
+                // https://www.w3schools.com/charsets/ref_emoji_transport.asp boat emoji
+                sq.innerHTML = `Ship ${name[name.length - 1]} &#128741;` // makes it more 
                 sq.style.backgroundColor = colors[index]
 
             })
         })
+        // updates ui with msg to user
+        guessesDisplay.innerText = msg
     }
 
 
@@ -95,9 +118,9 @@ window.onload = async () => {
         const { coords, orientation, size } = ship
         let formattedInitialCoord = `${coords[0]}-${coords[1]}`
         let result = [formattedInitialCoord]
-        count = size
+        count = size - 1 // finding the other sqs coords so if size is 3, need to find other 2 (3-1)
         incrementor = 0 // to help determine distance from original coordinate
-        while (count - 1) {
+        while (count) {
             incrementor++ // increase incrementor to start with next coord below or to right
             let horizCoord = `${coords[0] + incrementor}-${coords[1]}` // horiz coord should move to next column
             let verticalCoord = `${coords[0]}-${coords[1] + incrementor}` // vert coord should move to row below
@@ -113,6 +136,7 @@ window.onload = async () => {
 		const boardDiv = document.getElementById('board')
 		for(let i = 1; i < 7; i++) {
 			for (let j = 1; j < 7; j++) {
+				// ids are col-row
 				boardDiv.innerHTML += `<div id="${j}-${i}" class="cell">`
 			}
 		}
@@ -126,13 +150,12 @@ window.onload = async () => {
 			})
 		})
 	}
+
 	generateHtml()
 
 	let squares = Array.from(document.getElementsByClassName('cell'))
-
     squares.forEach(sq => sq.onclick = () => {
-            const { id } = sq // get id of square
-            foundShip = false // FLAG FOR displaying hit or miss to user
+            const { id } = sq
             sunkShip = false // FLAG for displaying if ship was sunk to user
 
             // GUARD RAILS ON GAME PLAY
@@ -144,13 +167,12 @@ window.onload = async () => {
 
             // increment number of guesses
             gameState.guesses++
-
+            guessesDisplay.innerText = (GUESS_LIMIT - gameState.guesses) + ' guesses left'
 
             // DETERMINE HIT
             // if cell doesnt have class ship, then it's a miss
             if(sq.classList.contains('ship')) {
             	sq.classList.add('hit')
-            	foundShip = true
                 gameState.userHits++
                 const name = sq.getAttribute('ship-name')
                 // start tracking if ship was sunk by comparing ship name with size of ship, and counter
@@ -161,37 +183,33 @@ window.onload = async () => {
                 }
                 // If ship square count (size) = to ships pieces found for ship, 
                 // ship is sunk and show to user
-                const shipSize = Number(sq.getAttribute('ship-size'))
-                if (shipSize == sunkTrackerCount) {
-                    sunkShip = true
+                sunkShip = Number(sq.getAttribute('ship-size')) === sunkTrackerCount
+
+                if(sunkShip) {
+                	hitReportDisplay.innerText = 'SUNK'
+                } else {
+					hitReportDisplay.innerText = 'HIT'
                 }
+                // adds bullseye emoji
+                sq.innerHTML += '&#127919;'
 
             } else {
             	sq.classList.add('miss')
+            	hitReportDisplay.innerText = 'MISS'
+            	// adds prohibited emoji
+            	sq.innerHTML+= '&#128683;'
             }
 
-            // UPDATE UI
-            if (foundShip && !sunkShip) {
-                hitReportDisplay.innerText = 'HIT'
-            } else if (foundShip && sunkShip) {
-                hitReportDisplay.innerText = 'SUNK'
-            } else {
-                hitReportDisplay.innerText = 'MISS'
-            }
-            // decrement guesses in game ui
-            guessesDisplay.innerText = (GUESS_LIMIT - gameState.guesses) + ' guesses left'
+            // DETERMINE NEXT ROUND OF GAME
+            // if guesses are at 20 and user successful hits < hits to win game
             if (gameState.guesses === GUESS_LIMIT & gameState.userHits < hitsToWin) {
-                guessesDisplay.innerText = 'GAME OVER'
-                showShips()
+                endGame('LOST - GAME OVER')
             } else if (gameState.userHits === hitsToWin) {
-                guessesDisplay.innerText = 'WON'
-                showShips()
+                endGame('WON')
             }
         }
-
     )
 }
 </script>
 </body>
-
 </html> 
